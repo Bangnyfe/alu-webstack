@@ -1,32 +1,37 @@
 #!/usr/bin/env bash
-# Display information about subdomains
+# Script to display information about subdomains
 
+# Function to get subdomain information
 get_subdomain_info() {
     local domain=$1
     local subdomain=$2
     local full_domain="${subdomain}.${domain}"
-    local result
-    local record_type
-    local destination
     
     # Use dig to get DNS information and awk to parse it
-    result=$(dig "$full_domain" | grep -A1 'ANSWER SECTION:' | tail -n1)
+    local output
+    output=$(dig "$full_domain" | grep -A1 'ANSWER SECTION:' | tail -n1)
     
-    if [ -n "$result" ]; then
-        record_type=$(echo "$result" | awk '{print $4}')
-        destination=$(echo "$result" | awk '{print $5}')
+    if [ -n "$output" ]; then
+        local record_type
+        local destination
+        record_type=$(echo "$output" | awk '{print $4}')
+        destination=$(echo "$output" | awk '{print $5}')
+        
         echo "The subdomain $subdomain is a $record_type record and points to $destination"
     fi
 }
 
-# Main logic
-if [ $# -eq 1 ]; then
-    # Only domain provided, check all default subdomains
-    get_subdomain_info "$1" "www"
-    get_subdomain_info "$1" "lb-01"
-    get_subdomain_info "$1" "web-01"
-    get_subdomain_info "$1" "web-02"
-elif [ $# -eq 2 ]; then
-    # Both domain and subdomain provided
-    get_subdomain_info "$1" "$2"
+# Main script logic
+domain=$1
+subdomain=$2
+
+if [ -z "$subdomain" ]; then
+    # No subdomain specified, check all default subdomains
+    get_subdomain_info "$domain" "www"
+    get_subdomain_info "$domain" "lb-01"
+    get_subdomain_info "$domain" "web-01"
+    get_subdomain_info "$domain" "web-02"
+else
+    # Specific subdomain specified
+    get_subdomain_info "$domain" "$subdomain"
 fi
